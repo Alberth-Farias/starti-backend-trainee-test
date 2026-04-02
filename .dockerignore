@@ -1,0 +1,37 @@
+# Local dependencies
+node_modules
+.pnpm-store
+
+# Local build
+dist
+build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+
+# Environment
+.env
+.env.*
+
+# IDE / Editor
+.vscode
+.idea
+
+# Tests
+coverage
+*.spec.ts
+
+# Others
+tmp
+temp

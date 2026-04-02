@@ -9,7 +9,7 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    command: sh -c "pnpm prisma migrate deploy && pnpm run start"
+    command: node dist/src/main.js
 
   database:
     image: postgres:16-alpine

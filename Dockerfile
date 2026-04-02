@@ -1,15 +1,26 @@
-FROM node:20-alpine
-
+FROM node:20-alpine AS base
 WORKDIR /app
+RUN corepack enable
 
-COPY package*.json ./
+FROM base AS dependencies
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-RUN npm install -g pnpm && pnpm install
-
+FROM base AS builder
+COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
-
 RUN pnpm prisma generate && pnpm run build
 
-EXPOSE 3000
+FROM base AS runner
+WORKDIR /app
 
-CMD ["pnpm", "run", "start"]
+ENV NODE_ENV=production
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+
+EXPOSE 3000
+CMD ["node", "dist/src/main.js"]

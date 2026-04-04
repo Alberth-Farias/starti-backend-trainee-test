@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -9,10 +10,11 @@ import {
 } from 'class-validator';
 
 export class UpdateUserDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'ReginaldoRossi',
     description: 'Username with 3-20 characters (letters only, no spaces)',
   })
+  @IsOptional()
   @IsString({ message: 'The username must be a string' })
   @IsNotEmpty({ message: 'The username cannot be empty' })
   @MinLength(3, { message: 'The username must be at least 3 characters' })
@@ -20,32 +22,35 @@ export class UpdateUserDto {
   @Matches(/^[a-zA-ZÀ-ÿ]+$/, {
     message: 'The username must only contain letters and no spaces',
   })
-  username: string;
+  username?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Reginaldo Rossi',
     description: 'Name with 3-30 characters',
   })
+  @IsOptional()
   @IsString({ message: 'The name must be a string' })
   @IsNotEmpty({ message: 'The name cannot be empty' })
   @MinLength(3, { message: 'The name must be at least 3 characters' })
   @MaxLength(30, { message: 'The name must be at most 30 characters' })
-  name: string;
+  name?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'reginaldorossi@gmail.com',
     description: 'Valid email',
   })
+  @IsOptional()
   @IsNotEmpty({ message: 'The email cannot be empty' })
   @IsEmail({}, { message: 'The email must be a valid email' })
   @MaxLength(254, { message: 'The email must be at most 254 characters' })
-  email: string;
+  email?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Reginaldo@123',
     description:
       'Strong password with 8-16 characters containing at least one uppercase letter, one lowercase letter, one number and one special character',
   })
+  @IsOptional()
   @IsString({ message: 'The password must be a string' })
   @IsNotEmpty({ message: 'The password cannot be empty' })
   @MinLength(8, { message: 'The password must be at least 8 characters' })
@@ -54,15 +59,16 @@ export class UpdateUserDto {
     message:
       'The password must contain at least one uppercase letter, one lowercase letter, one number and one special character',
   })
-  password: string;
+  password?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Most famous singer in the world',
     description: 'Biography with 3-90 characters',
   })
+  @IsOptional()
   @IsString({ message: 'The biography must be a string' })
   @IsNotEmpty({ message: 'The biography cannot be empty' })
   @MinLength(3, { message: 'The biography must be at least 3 characters' })
   @MaxLength(90, { message: 'The biography must be at most 90 characters' })
-  biography: string;
+  biography?: string;
 }

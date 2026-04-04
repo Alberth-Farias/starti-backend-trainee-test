@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  ParseIntPipe,
+  Put,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -8,27 +19,56 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async create(@Body() createUserDto: CreateUserDto) {
+    const data = await this.usersService.create(createUserDto);
+    return {
+      message: 'User created successfully',
+      data: data,
+    };
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  async findById(@Param('id', ParseIntPipe) id: number) {
+    const data = await this.usersService.findById(id);
+    return {
+      message: 'User found successfully',
+      data: data,
+    };
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @Put(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const data = await this.usersService.update(id, updateUserDto);
+    return {
+      message: 'User updated sucessfully',
+      data: data,
+    };
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.usersService.remove(id);
+  }
+
+  @Get(':id/posts')
+  async findAllPosts(@Param('id', ParseIntPipe) id: number) {
+    const data = await this.usersService.getAllUserPosts(id);
+    return {
+      message: 'All user posts found successfully',
+      data: data,
+    };
+  }
+
+  @Get(':id/comments')
+  async findAllComments(@Param('id', ParseIntPipe) id: number) {
+    const data = await this.usersService.getAllUserComments(id);
+    return {
+      message: 'All user comments found successfully',
+      data: data,
+    };
   }
 }

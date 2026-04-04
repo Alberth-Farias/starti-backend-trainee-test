@@ -3,10 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Prisma } from 'generated/prisma/client';
+
+type PrismaKnownRequestErrorLike = {
+  code: string;
+  meta?: {
+    target?: unknown;
+  };
+  message?: string;
+};
 
 @Injectable()
 export class UsersService {
@@ -19,7 +26,43 @@ export class UsersService {
     email: true,
     biography: true,
     createdAt: true,
-  } satisfies Prisma.UserSelect;
+  };
+
+  private isPrismaKnownRequestError(
+    error: unknown,
+  ): error is PrismaKnownRequestErrorLike {
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    if (
+      !('code' in error) ||
+      typeof (error as { code?: unknown }).code !== 'string'
+    ) {
+      return false;
+    }
+
+    return (
+      !('message' in error) ||
+      typeof (error as { message?: unknown }).message === 'string'
+    );
+  }
+
+  private getDuplicateFieldMessage(error: PrismaKnownRequestErrorLike) {
+    const target = error.meta?.target as string[] | undefined;
+
+    const field =
+      target?.[0] ??
+      (error.message?.includes('username') ? 'username' : null) ??
+      (error.message?.includes('email') ? 'email' : null);
+
+    const messages: Record<string, string> = {
+      email: 'Email already registered',
+      username: 'Username already registered',
+    };
+
+    return (field && messages[field]) ?? 'Duplicate field';
+  }
 
   async create(createUserDto: CreateUserDto) {
     try {
@@ -28,23 +71,9 @@ export class UsersService {
         select: this.userSelect,
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (this.isPrismaKnownRequestError(error)) {
         if (error.code === 'P2002') {
-          const target = error.meta?.target as string[] | undefined;
-
-          const field =
-            target?.[0] ??
-            (error.message.includes('username') ? 'username' : null) ??
-            (error.message.includes('email') ? 'email' : null);
-
-          const messages: Record<string, string> = {
-            email: 'Email already registered',
-            username: 'Username already registered',
-          };
-
-          throw new ConflictException(
-            (field && messages[field]) ?? 'Duplicate field',
-          );
+          throw new ConflictException(this.getDuplicateFieldMessage(error));
         }
       }
       throw error;
@@ -70,27 +99,13 @@ export class UsersService {
         select: this.userSelect,
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (this.isPrismaKnownRequestError(error)) {
         if (error.code === 'P2025') {
           throw new NotFoundException('User not found');
         }
 
         if (error.code === 'P2002') {
-          const target = error.meta?.target as string[] | undefined;
-
-          const field =
-            target?.[0] ??
-            (error.message.includes('username') ? 'username' : null) ??
-            (error.message.includes('email') ? 'email' : null);
-
-          const messages: Record<string, string> = {
-            email: 'Email already registered',
-            username: 'Username already registered',
-          };
-
-          throw new ConflictException(
-            (field && messages[field]) ?? 'Duplicate field',
-          );
+          throw new ConflictException(this.getDuplicateFieldMessage(error));
         }
       }
 
@@ -104,7 +119,7 @@ export class UsersService {
         where: { id },
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (this.isPrismaKnownRequestError(error)) {
         if (error.code === 'P2025') {
           throw new NotFoundException('User not found');
         }

@@ -3,10 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import bcrypt from 'bcryptjs';
+import { UsersRepository } from './users.repository';
 
 type PrismaKnownRequestErrorLike = {
   code: string;
@@ -18,7 +18,7 @@ type PrismaKnownRequestErrorLike = {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly usersRepository: UsersRepository) {}
 
   private readonly userSelect = {
     id: true,
@@ -69,10 +69,10 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
 
     try {
-      return await this.prisma.user.create({
-        data: { ...createUserDto, password: hashedPassword },
-        select: this.userSelect,
-      });
+      return await this.usersRepository.create(
+        { ...createUserDto, password: hashedPassword },
+        this.userSelect,
+      );
     } catch (error) {
       if (this.isPrismaKnownRequestError(error)) {
         if (error.code === 'P2002') {
@@ -84,10 +84,7 @@ export class UsersService {
   }
 
   async findById(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: this.userSelect,
-    });
+    const user = await this.usersRepository.findById(id, this.userSelect);
 
     if (!user) throw new NotFoundException('User not found');
 
@@ -96,11 +93,11 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
-      return await this.prisma.user.update({
-        where: { id },
-        data: updateUserDto,
-        select: this.userSelect,
-      });
+      return await this.usersRepository.update(
+        id,
+        updateUserDto,
+        this.userSelect,
+      );
     } catch (error) {
       if (this.isPrismaKnownRequestError(error)) {
         if (error.code === 'P2025') {
@@ -118,9 +115,7 @@ export class UsersService {
 
   async remove(id: number) {
     try {
-      await this.prisma.user.delete({
-        where: { id },
-      });
+      await this.usersRepository.remove(id);
     } catch (error) {
       if (this.isPrismaKnownRequestError(error)) {
         if (error.code === 'P2025') {
@@ -133,12 +128,7 @@ export class UsersService {
   }
 
   async getAllUserPosts(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        posts: true,
-      },
-    });
+    const user = await this.usersRepository.getAllPosts(id);
 
     if (!user) throw new NotFoundException('User not found');
 
@@ -146,12 +136,7 @@ export class UsersService {
   }
 
   async getAllUserComments(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        comments: true,
-      },
-    });
+    const user = await this.usersRepository.getAllComments(id);
 
     if (!user) throw new NotFoundException('User not found');
 

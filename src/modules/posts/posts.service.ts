@@ -41,15 +41,24 @@ export class PostsService {
 
   async create(createPostDto: CreatePostDto) {
     const { userId, ...postData } = createPostDto;
-
-    return this.postsRepository.create({
-      ...postData,
-      user: {
-        connect: {
-          id: userId,
+    try {
+      return await this.postsRepository.create({
+        ...postData,
+        user: {
+          connect: {
+            id: userId,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (this.isPrismaKnownRequestError(error)) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('User not found');
+        }
+      }
+
+      throw error;
+    }
   }
 
   async findById(id: number) {

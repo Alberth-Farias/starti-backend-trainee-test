@@ -21,7 +21,7 @@ export class CreatePostDto {
   userId: number;
 
   @ApiProperty({
-    example: 'The song "Bilu Bilu" is very good.',
+    example: 'The song Bilu Bilu is very good.',
     description: 'Post text with 3-500 characters',
   })
   @IsString({ message: 'The text must be a string' })

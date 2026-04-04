@@ -76,6 +76,14 @@ describe('PostsService', () => {
     });
   });
 
+  it('should throw NotFoundException when creating post for non-existing user', async () => {
+    postsRepositoryMock.create.mockRejectedValue({ code: 'P2025' });
+
+    await expect(service.create(createPostDto)).rejects.toThrow(
+      'User not found',
+    );
+  });
+
   it('should find a post by id', async () => {
     const post = {
       id: 1,

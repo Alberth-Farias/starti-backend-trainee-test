@@ -6,6 +6,13 @@ import type { Prisma } from '../../../generated/prisma/client';
 export class PostsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findUserById(id: number) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+  }
+
   async create(data: Prisma.PostCreateInput) {
     return this.prisma.post.create({ data });
   }
@@ -22,8 +29,14 @@ export class PostsRepository {
   }
 
   async remove(id: number) {
-    return this.prisma.post.delete({
-      where: { id },
+    return this.prisma.$transaction(async (tx) => {
+      await tx.comment.deleteMany({
+        where: { postId: id },
+      });
+
+      return tx.post.delete({
+        where: { id },
+      });
     });
   }
 

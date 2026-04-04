@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import bcrypt from 'bcryptjs';
 
 type PrismaKnownRequestErrorLike = {
   code: string;
@@ -65,9 +66,11 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto) {
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
+
     try {
       return await this.prisma.user.create({
-        data: createUserDto,
+        data: { ...createUserDto, password: hashedPassword },
         select: this.userSelect,
       });
     } catch (error) {

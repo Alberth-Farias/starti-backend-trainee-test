@@ -1,9 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import bcrypt from 'bcryptjs';
 import { UsersService } from './users.service';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UsersRepository } from './users.repository';
 
-jest.mock('../../../prisma/prisma.service', () => ({
-  PrismaService: class PrismaService {
+jest.mock('bcryptjs', () => ({
+  __esModule: true,
+  default: {
+    hash: jest.fn(),
+  },
+}));
+
+jest.mock('./users.repository', () => ({
+  UsersRepository: class UsersRepository {
     readonly __mock = true;
   },
 }));
@@ -37,24 +45,25 @@ describe('UsersService', () => {
     createdAt: true,
   };
 
-  const prismaServiceMock = {
-    user: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
+  const usersRepositoryMock = {
+    create: jest.fn(),
+    findById: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+    getAllPosts: jest.fn(),
+    getAllComments: jest.fn(),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
-          provide: PrismaService,
-          useValue: prismaServiceMock,
+          provide: UsersRepository,
+          useValue: usersRepositoryMock,
         },
       ],
     }).compile();
@@ -73,14 +82,14 @@ describe('UsersService', () => {
       createdAt: now,
     };
 
-    prismaServiceMock.user.create.mockResolvedValue(createdUser);
+    usersRepositoryMock.create.mockResolvedValue(createdUser);
 
     await expect(service.create(createUserDto)).resolves.toEqual(createdUser);
 
-    expect(prismaServiceMock.user.create).toHaveBeenCalledWith({
-      data: createUserDto,
-      select: publicSelect,
-    });
+    expect(usersRepositoryMock.create).toHaveBeenCalledWith(
+      { ...createUserDto, password: 'hashed-password' },
+      publicSelect,
+    );
   });
 
   it('should throw ConflictException when username is duplicated on create', async () => {
@@ -90,7 +99,7 @@ describe('UsersService', () => {
       message: 'Unique constraint failed on the fields: (`username`)',
     };
 
-    prismaServiceMock.user.create.mockRejectedValue(error);
+    usersRepositoryMock.create.mockRejectedValue(error);
 
     await expect(
       service.create({
@@ -110,18 +119,15 @@ describe('UsersService', () => {
       createdAt: now,
     };
 
-    prismaServiceMock.user.findUnique.mockResolvedValue(user);
+    usersRepositoryMock.findById.mockResolvedValue(user);
 
     await expect(service.findById(1)).resolves.toEqual(user);
 
-    expect(prismaServiceMock.user.findUnique).toHaveBeenCalledWith({
-      where: { id: 1 },
-      select: publicSelect,
-    });
+    expect(usersRepositoryMock.findById).toHaveBeenCalledWith(1, publicSelect);
   });
 
   it('should throw NotFoundException when user is not found', async () => {
-    prismaServiceMock.user.findUnique.mockResolvedValue(null);
+    usersRepositoryMock.findById.mockResolvedValue(null);
 
     await expect(service.findById(1)).rejects.toThrow('User not found');
   });
@@ -133,21 +139,21 @@ describe('UsersService', () => {
       createdAt: now,
     };
 
-    prismaServiceMock.user.update.mockResolvedValue(updatedUser);
+    usersRepositoryMock.update.mockResolvedValue(updatedUser);
 
     await expect(service.update(1, updateUserDto)).resolves.toEqual(
       updatedUser,
     );
 
-    expect(prismaServiceMock.user.update).toHaveBeenCalledWith({
-      where: { id: 1 },
-      data: updateUserDto,
-      select: publicSelect,
-    });
+    expect(usersRepositoryMock.update).toHaveBeenCalledWith(
+      1,
+      updateUserDto,
+      publicSelect,
+    );
   });
 
   it('should throw NotFoundException when updating a missing user', async () => {
-    prismaServiceMock.user.update.mockRejectedValue({ code: 'P2025' });
+    usersRepositoryMock.update.mockRejectedValue({ code: 'P2025' });
 
     await expect(
       service.update(1, {
@@ -157,19 +163,17 @@ describe('UsersService', () => {
   });
 
   it('should remove a user', async () => {
-    prismaServiceMock.user.delete.mockResolvedValue({});
+    usersRepositoryMock.remove.mockResolvedValue({});
 
     await expect(service.remove(1)).resolves.toBeUndefined();
 
-    expect(prismaServiceMock.user.delete).toHaveBeenCalledWith({
-      where: { id: 1 },
-    });
+    expect(usersRepositoryMock.remove).toHaveBeenCalledWith(1);
   });
 
   it('should get all posts for a user', async () => {
     const posts = [{ id: 1, title: 'Post 1' }];
 
-    prismaServiceMock.user.findUnique.mockResolvedValue({ posts });
+    usersRepositoryMock.getAllPosts.mockResolvedValue({ posts });
 
     await expect(service.getAllUserPosts(1)).resolves.toEqual(posts);
   });
@@ -177,7 +181,7 @@ describe('UsersService', () => {
   it('should get all comments for a user', async () => {
     const comments = [{ id: 1, content: 'Comment 1' }];
 
-    prismaServiceMock.user.findUnique.mockResolvedValue({ comments });
+    usersRepositoryMock.getAllComments.mockResolvedValue({ comments });
 
     await expect(service.getAllUserComments(1)).resolves.toEqual(comments);
   });

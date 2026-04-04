@@ -12,46 +12,48 @@ export interface ControllerResponse<T> {
   data: T;
 }
 
-interface ApiResponse<T> {
-  statusCode: number;
+export interface ApiResponse<T> {
+  message: string;
   data: T;
-  message: string | null;
+  statusCode: number;
 }
 
-function isControllerResponse<T>(data: unknown): data is ControllerResponse<T> {
+function isControllerResponse<T>(
+  value: unknown,
+): value is ControllerResponse<T> {
   return (
-    typeof data === 'object' &&
-    data !== null &&
-    'message' in data &&
-    'data' in data
+    typeof value === 'object' &&
+    value !== null &&
+    'message' in value &&
+    'data' in value
   );
 }
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<
-  T,
+  T | ControllerResponse<T>,
   ApiResponse<T>
 > {
   intercept(
     context: ExecutionContext,
-    next: CallHandler<T>,
+    next: CallHandler<T | ControllerResponse<T>>,
   ): Observable<ApiResponse<T>> {
     const response = context.switchToHttp().getResponse<Response>();
 
     return next.handle().pipe(
-      map((data: T) => {
-        if (isControllerResponse<T>(data)) {
+      map((payload): ApiResponse<T> => {
+        if (isControllerResponse<T>(payload)) {
           return {
+            message: payload.message,
+            data: payload.data,
             statusCode: response.statusCode,
-            message: data.message,
-            data: data.data,
           };
         }
 
         return {
-          statusCode: response.statusCode,
           message: 'Success',
-          data,
+          data: payload,
+          statusCode: response.statusCode,
         };
       }),
     );

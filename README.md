@@ -10,10 +10,11 @@ API REST com NestJS + Prisma + PostgreSQL.
 
 ## Configuração rápida
 
-1. Copie o arquivo de ambiente:
+1. Copie o arquivo de ambiente e instale as dependências:
 
 ```bash
 cp .env.example .env
+pnpm install
 ```
 
 2. Preencha:
@@ -84,67 +85,18 @@ BASE_URL="http://localhost:3000"
 
 ### Users
 
-```bash
-curl -X POST "$BASE_URL/users" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "ReginaldoRossi",
-    "name": "Reginaldo Rossi",
-    "email": "reginaldo@example.com",
-    "password": "Reginaldo@123",
-    "biography": "Most famous singer in the world"
-  }'
+<img width="1393" height="583" alt="image" src="https://github.com/user-attachments/assets/e3c77372-a435-4ea2-b05b-81b91afabe6e" />
 
-curl -X GET "$BASE_URL/users/1"
-
-curl -X PUT "$BASE_URL/users/1" \
-  -H "Content-Type: application/json" \
-  -d '{"biography": "Biografia atualizada"}'
-
-curl -X GET "$BASE_URL/users/1/posts"
-curl -X GET "$BASE_URL/users/1/comments"
-curl -X DELETE "$BASE_URL/users/1"
-```
 
 ### Posts
 
-```bash
-curl -X POST "$BASE_URL/posts" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": 1,
-    "text": "The show was full and the crowd was incredible.",
-    "archived": false
-  }'
+<img width="1393" height="479" alt="image" src="https://github.com/user-attachments/assets/31c1ee08-4b0c-4ee7-9cdb-11ae6fe5c8aa" />
 
-curl -X GET "$BASE_URL/posts/1"
-
-curl -X PUT "$BASE_URL/posts/1" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Updated post text"}'
-
-curl -X PATCH "$BASE_URL/posts/1/archive"
-curl -X GET "$BASE_URL/posts/1/comments"
-curl -X DELETE "$BASE_URL/posts/1"
-```
 
 ### Comments
 
-```bash
-curl -X POST "$BASE_URL/comments" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": 1,
-    "postId": 1,
-    "message": "Amazing performance!"
-  }'
+<img width="1393" height="519" alt="image" src="https://github.com/user-attachments/assets/62bcaa95-07c6-44ac-b7be-899da4ad3489" />
 
-curl -X PATCH "$BASE_URL/comments/1" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Updated comment text"}'
-
-curl -X DELETE "$BASE_URL/comments/1"
-```
 
 ## Testes
 
